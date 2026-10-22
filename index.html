@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GhostChat PWA - Messagerie P2P E2EE</title>
+    
+    <!-- PWA & Mobile Meta Tags -->
+    <meta name="theme-color" content="#090d16">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="GhostChat">
+    <meta name="description" content="Messagerie ultra-sécurisée 100% P2P sans serveur avec WebRTC et E2EE">
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cyber: {
+                            bg: '#07090e',
+                            dark: '#0d121d',
+                            card: '#131b2e',
+                            border: '#1f2d4a',
+                            accent: '#00ffcc',
+                            purple: '#a855f7',
+                            danger: '#ff2a6d',
+                            warning: '#ffb703'
+                        }
+                    },
+                    fontFamily: {
+                        mono: ['JetBrains Mono', 'Fira Code', 'Monaco', 'monospace'],
+                        sans: ['Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Lucide Icons & QR Code Generator -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #07090e;
+            color: #e2e8f0;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: #07090e; }
+        ::-webkit-scrollbar-thumb { background: #1f2d4a; border-radius: 2px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00ffcc; }
+
+        /* Custom Animations & Glows */
+        .glow-accent { box-shadow: 0 0 20px rgba(0, 255, 204, 0.15); }
+        .glow-danger { box-shadow: 0 0 20px rgba(255, 42, 109, 0.2); }
+        
+        .cyber-grid {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(31, 45, 74, 0.2) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(31, 45, 74, 0.2) 1px, transparent 1px);
+        }
+
+        /* Message Disintegration Effect */
+        @keyframes disintegrate {
+            0% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
+            50% { opacity: 0.5; transform: scale(0.95) translateY(-4px); filter: blur(2px); }
+            100% { opacity: 0; transform: scale(0.8) translateY(-10px); filter: blur(8px); }
+        }
+        .animate-disintegrate {
+            animation: disintegrate 0.6s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col overflow-hidden cyber-grid select-none">
+
+    <!-- TOP APPLICATION HEADER -->
+    <header class="bg-cyber-dark/95 border-b border-cyber-border px-4 py-3 flex items-center justify-between shrink-0 z-20 backdrop-blur-md">
+        <div class="flex items-center gap-3">
+            <div class="p-2 bg-cyber-accent/10 border border-cyber-accent/30 rounded-xl text-cyber-accent shadow-sm">
+                <i data-lucide="ghost" class="w-5 h-5"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-bold text-base tracking-wider bg-gradient-to-r from-cyber-accent via-teal-300 to-cyber-purple bg-clip-text text-transparent">
+                        GHOSTCHAT
+                    </h1>
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyber-accent/10 text-cyber-accent border border-cyber-accent/20">P2P PWA</span>
+                </div>
+                <p class="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
+                    <span id="connection-status-dot" class="w-2 h-2 rounded-full bg-rose-500"></span>
+                    <span id="connection-status-text" class="text-rose-400">Non connecté</span>
+                </p>
+            </div>
+        </div>
+
+        <!-- Header Actions -->
+        <div class="flex items-center gap-2">
+            <!-- PWA Install Prompt Button -->
+            <button id="pwa-install-btn" class="hidden bg-cyber-accent/10 hover:bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/40 text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition items-center gap-1.5">
+                <i data-lucide="download text-xs" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">Installer App</span>
+            </button>
+
+            <!-- Sound Toggle -->
+            <button id="sound-btn" onclick="toggleSound()" class="p-2 bg-cyber-card border border-cyber-border hover:border-slate-500 rounded-lg text-slate-300 transition" title="Activer/Désactiver le son">
+                <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4 text-cyber-accent"></i>
+            </button>
+
+            <!-- EMERGENCY KILL SWITCH BUTTON -->
+            <button onclick="emergencyWipe()" class="bg-cyber-danger/10 hover:bg-cyber-danger/20 text-cyber-danger border border-cyber-danger/40 hover:border-cyber-danger px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 glow-danger" title="Effacer immédiatement toutes les données et fermer la session">
+                <i data-lucide="flame" class="w-4 h-4"></i>
+                <span class="hidden md:inline">KILL SWITCH</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN APP CONTAINER -->
+    <main class="flex-1 flex overflow-hidden relative">
+
+        <!-- SETUP & SIGNALING MODAL / OVERLAY (Shown when disconnected) -->
+        <div id="setup-overlay" class="absolute inset-0 bg-cyber-bg/95 z-10 p-4 sm:p-6 overflow-y-auto flex flex-col items-center justify-center backdrop-blur-md">
+            <div class="max-w-xl w-full bg-cyber-card border border-cyber-border rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6">
+                
+                <!-- Overlay Title -->
+                <div class="text-center space-y-1">
+                    <h2 class="text-xl font-bold text-slate-100 flex items-center justify-center gap-2">
+                        <i data-lucide="shield-check" class="w-5 h-5 text-cyber-accent"></i> Initialisation du Salon P2P
+                    </h2>
+                    <p class="text-xs text-slate-400 font-mono">Chiffrement End-to-End (Web Crypto API) + WebRTC sans serveur</p>
+                </div>
+
+                <!-- Tabs: Host or Join -->
+                <div class="flex bg-cyber-dark p-1 rounded-xl border border-cyber-border font-mono text-xs">
+                    <button id="tab-host-btn" onclick="switchSignalingTab('host')" class="flex-1 py-2 rounded-lg font-bold bg-cyber-accent text-slate-950 transition flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> 1. Créer le salon (Hôte)
+                    </button>
+                    <button id="tab-join-btn" onclick="switchSignalingTab('join')" class="flex-1 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2">
+                        <i data-lucide="arrow-right-circle" class="w-4 h-4"></i> 2. Rejoindre un salon
+                    </button>
+                </div>
+
+                <!-- TAB CONTENT: HOST SALON -->
+                <div id="tab-host-content" class="space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-mono text-slate-300 flex justify-between">
+                            <span>Étape A : Votre Token d'Invitation (OFFER)</span>
+                            <span class="text-cyber-accent font-bold">À envoyer à votre ami</span>
+                        </label>
+                        <div class="relative">
+                            <textarea id="host-offer-out" readonly rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-emerald-400 focus:outline-none resize-none" placeholder="Génération du token d'offre WebRTC en cours..."></textarea>
+                            <div class="absolute bottom-2 right-2 flex gap-1">
+                                <button onclick="copyElementText('host-offer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-accent text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
+                                    <i data-lucide="copy" class="w-3 h-3 text-cyber-accent"></i> Copier
+                                </button>
+                                <button onclick="showQRCode('host-offer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-accent text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
+                                    <i data-lucide="qr-code" class="w-3 h-3 text-cyber-purple"></i> QR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-cyber-border/60">
+                        <label class="text-xs font-mono text-slate-300">Étape B : Collez le Token de Réponse de votre ami (ANSWER)</label>
+                        <textarea id="host-answer-in" rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-slate-200 focus:border-cyber-accent focus:outline-none resize-none" placeholder="Collez ici le token Answer généré par votre invité..."></textarea>
+                        <button onclick="acceptAnswerAsHost()" class="w-full bg-cyber-accent hover:bg-teal-300 text-slate-950 font-bold py-2.5 rounded-xl text-xs font-mono transition flex items-center justify-center gap-2 glow-accent">
+                            <i data-lucide="zap" class="w-4 h-4"></i> Finaliser la Connexion P2P
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TAB CONTENT: JOIN SALON -->
+                <div id="tab-join-content" class="hidden space-y-4">
+                    <div class="space-y-2">
+                        <label class="text-xs font-mono text-slate-300">Étape 1 : Collez le Token d'Invitation reçu (OFFER)</label>
+                        <textarea id="join-offer-in" rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-slate-200 focus:border-cyber-purple focus:outline-none resize-none" placeholder="Collez ici le token Offer fourni par l'hôte..."></textarea>
+                        <button onclick="generateAnswerAsGuest()" class="w-full bg-cyber-purple hover:bg-purple-400 text-white font-bold py-2.5 rounded-xl text-xs font-mono transition flex items-center justify-center gap-2">
+                            <i data-lucide="key" class="w-4 h-4"></i> Générer le Token de Réponse
+                        </button>
+                    </div>
+
+                    <div class="space-y-2 pt-2 border-t border-cyber-border/60">
+                        <label class="text-xs font-mono text-slate-300 flex justify-between">
+                            <span>Étape 2 : Votre Token de Réponse (ANSWER)</span>
+                            <span class="text-cyber-purple font-bold">À renvoyer à l'hôte</span>
+                        </label>
+                        <div class="relative">
+                            <textarea id="join-answer-out" readonly rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-purple-300 focus:outline-none resize-none" placeholder="Le token de réponse apparaîtra ici..."></textarea>
+                            <div class="absolute bottom-2 right-2 flex gap-1">
+                                <button onclick="copyElementText('join-answer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-purple text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
+                                    <i data-lucide="copy" class="w-3 h-3 text-cyber-purple"></i> Copier
+                                </button>
+                                <button onclick="showQRCode('join-answer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-purple text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
+                                    <i data-lucide="qr-code" class="w-3 h-3 text-cyber-accent"></i> QR
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Security Badge -->
+                <div class="pt-2 flex items-center justify-between text-[10px] font-mono text-slate-500 border-t border-cyber-border/40">
+                    <span class="flex items-center gap-1 text-emerald-400">
+                        <i data-lucide="shield" class="w-3 h-3"></i> RSA-OAEP + AES-GCM 256-bit
+                    </span>
+                    <span>Zero Data Store / RAM Only</span>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- CHAT DISPLAY AREA -->
+        <div class="flex-1 flex flex-col h-full bg-cyber-bg overflow-hidden">
+            
+            <!-- Messages Container -->
+            <div id="messages-container" class="flex-1 p-4 overflow-y-auto space-y-4 font-sans text-xs">
+                <!-- Welcome Banner -->
+                <div id="welcome-banner" class="max-w-md mx-auto my-6 p-4 rounded-xl bg-cyber-card/60 border border-cyber-border text-center space-y-2">
+                    <div class="inline-flex p-2 rounded-full bg-cyber-accent/10 text-cyber-accent">
+                        <i data-lucide="lock" class="w-5 h-5"></i>
+                    </div>
+                    <h3 class="font-bold text-slate-200 text-sm">Canal Direct Peer-to-Peer Sécurisé</h3>
+                    <p class="text-[11px] text-slate-400 font-mono">
+                        Les messages sont chiffrés sur votre appareil via Web Crypto et envoyés directement via le DataChannel WebRTC. Aucun serveur intermédiaire.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="typing-indicator" class="hidden px-4 py-1 text-[10px] font-mono text-cyber-accent flex items-center gap-2">
+                <span class="flex gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent animate-bounce [animation-delay:0.4s]"></span>
+                </span>
+                <span>L'interlocuteur saisit un message secret...</span>
+            </div>
+
+            <!-- Chat Input Area -->
+            <div class="p-3 bg-cyber-dark/90 border-t border-cyber-border flex items-center gap-2 shrink-0">
+                
+                <!-- Self Destruct Timer Selector -->
+                <div class="relative group">
+                    <select id="ttl-select" class="bg-cyber-card border border-cyber-border text-slate-300 text-xs font-mono rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-cyber-accent appearance-none cursor-pointer pr-6">
+                        <option value="0">∞ Pas d'autodestruction</option>
+                        <option value="10">🔥 10 Secondes</option>
+                        <option value="30">🔥 30 Secondes</option>
+                        <option value="60">🔥 1 Minute</option>
+                    </select>
+                    <i data-lucide="timer" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-3 pointer-events-none"></i>
+                </div>
+
+                <!-- Input Message Box -->
+                <input type="text" id="chat-input" disabled placeholder="Veuillez d'abord établir la connexion P2P..." 
+                    class="flex-1 bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyber-accent transition font-sans"
+                    onkeydown="handleTyping(); if(event.key==='Enter') sendChatMessage();">
+
+                <!-- Send Button -->
+                <button id="send-btn" disabled onclick="sendChatMessage()" class="bg-cyber-accent/30 text-slate-500 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-mono cursor-not-allowed">
+                    <span>Envoyer</span>
+                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                </button>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- QR CODE DISPLAY MODAL -->
+    <div id="qr-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+        <div class="bg-cyber-card border border-cyber-border rounded-2xl p-6 max-w-sm w-full flex flex-col items-center space-y-4">
+            <h3 class="font-bold text-sm font-mono text-slate-200">Scanner le QR Token</h3>
+            <div class="p-3 bg-white rounded-xl">
+                <canvas id="qr-canvas"></canvas>
+            </div>
+            <p class="text-[11px] font-mono text-slate-400 text-center">Faites scanner ce code QR par votre interlocuteur pour éviter le copier-coller.</p>
+            <button onclick="closeQRModal()" class="w-full bg-cyber-dark hover:bg-slate-800 text-slate-200 border border-cyber-border font-mono text-xs font-bold py-2 rounded-xl transition">
+                Fermer
+            </button>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-cyber-card border border-cyber-accent text-cyber-accent font-mono text-xs px-4 py-2 rounded-xl shadow-2xl opacity-0 transition-opacity pointer-events-none z-50 flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4"></i>
+        <span id="toast-text">Notification</span>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // =========================================================================
+        // GLOBAL STATE & PWA REGISTRATION
+        // =========================================================================
+        let peerConnection = null;
+        let dataChannel = null;
+        let myKeyPair = null;
+        let peerPublicKey = null;
+        let soundEnabled = true;
+        let typingTimeout = null;
+        let deferredPwaPrompt = null;
+
+        // Register Inline Service Worker & PWA Manifest
+        window.addEventListener('load', async () => {
+            lucide.createIcons();
+            initPWA();
+            initWebAudio();
+            await generateUserKeys();
+            initWebRTC();
+        });
+
+        function initPWA() {
+            // Dynamic PWA Manifest via Data URI
+            const manifest = {
+                name: "GhostChat P2P E2EE",
+                short_name: "GhostChat",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#07090e",
+                theme_color: "#07090e",
+                icons: [
+                    { src: "https://placehold.co/192x192/07090e/00ffcc?text=GHOST", sizes: "192x192", type: "image/png" },
+                    { src: "https://placehold.co/512x512/07090e/00ffcc?text=GHOST", sizes: "512x512", type: "image/png" }
+                ]
+            };
+            const manifestStr = JSON.stringify(manifest);
+            const blobManifest = new Blob([manifestStr], { type: 'application/json' });
+            const manifestUrl = URL.createObjectURL(blobManifest);
+            
+            const link = document.createElement('link');
+            link.rel = 'manifest';
+            link.href = manifestUrl;
+            document.head.appendChild(link);
+
+            // Dynamic Service Worker via Blob
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    const CACHE_NAME = 'ghostchat-v1';
+                    self.addEventListener('install', e => self.skipWaiting());
+                    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
+                    self.addEventListener('fetch', e => {
+                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+                    });
+                `;
+                const blobSW = new Blob([swCode], { type: 'text/javascript' });
+                const swUrl = URL.createObjectURL(blobSW);
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Error:', err));
+            }
+
+            // Capture PWA Install Prompt
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPwaPrompt = e;
+                const pwaBtn = document.getElementById('pwa-install-btn');
+                pwaBtn.classList.remove('hidden');
+                pwaBtn.classList.add('flex');
+            });
+
+            document.getElementById('pwa-install-btn').addEventListener('click', async () => {
+                if (deferredPwaPrompt) {
+                    deferredPwaPrompt.prompt();
+                    const choice = await deferredPwaPrompt.userChoice;
+                    if (choice.outcome === 'accepted') {
+                        showToast('PWA installée avec succès !');
+                    }
+                    deferredPwaPrompt = null;
+                    document.getElementById('pwa-install-btn').classList.add('hidden');
+                }
+            });
+        }
+
+        // =========================================================================
+        // SYNTHESIZED WEB AUDIO API SOUNDS (No External Assets)
+        // =========================================================================
+        let audioCtx = null;
+
+        function initWebAudio() {
+            try {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            } catch(e) {}
+        }
+
+        function playSound(type) {
+            if (!soundEnabled || !audioCtx) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (type === 'send') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            } else if (type === 'receive') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+                osc.start(now);
+                osc.stop(now + 0.2);
+            } else if (type === 'connect') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.setValueAtTime(600, now + 0.1);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'wipe') {
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(800, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                osc.start(now);
+                osc.stop(now + 0.4);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const icon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                icon.setAttribute('data-lucide', 'volume-2');
+                icon.className = 'w-4 h-4 text-cyber-accent';
+                showToast('Effets sonores activés');
+            } else {
+                icon.setAttribute('data-lucide', 'volume-x');
+                icon.className = 'w-4 h-4 text-slate-500';
+                showToast('Sons désactivés');
+            }
+            lucide.createIcons();
+        }
+
+        // =========================================================================
+        // WEB CRYPTO API (RSA-2048 + AES-GCM-256 E2EE)
+        // =========================================================================
+        async function generateUserKeys() {
+            myKeyPair = await window.crypto.subtle.generateKey(
+                {
+                    name: "RSA-OAEP",
+                    modulusLength: 2048,
+                    publicExponent: new Uint8Array([1, 0, 1]),
+                    hash: "SHA-256"
+                },
+                true,
+                ["encrypt", "decrypt"]
+            );
+        }
+
+        async function exportPublicKey() {
+            const exported = await window.crypto.subtle.exportKey("spki", myKeyPair.publicKey);
+            return arrayBufferToBase64(exported);
+        }
+
+        async function importPeerPublicKey(base64Key) {
+            const buffer = base64ToArrayBuffer(base64Key);
+            peerPublicKey = await window.crypto.subtle.importKey(
+                "spki",
+                buffer,
+                { name: "RSA-OAEP", hash: "SHA-256" },
+                true,
+                ["encrypt"]
+            );
+        }
+
+        async function encryptPayload(plaintext) {
+            // Generate temporary AES-256 key
+            const aesKey = await window.crypto.subtle.generateKey(
+                { name: "AES-GCM", length: 256 },
+                true,
+                ["encrypt", "decrypt"]
+            );
+            const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+            // Encrypt text with AES
+            const encoder = new TextEncoder();
+            const cipherTextBuf = await window.crypto.subtle.encrypt(
+                { name: "AES-GCM", iv: iv },
+                aesKey,
+                encoder.encode(plaintext)
+            );
+
+            // Encrypt AES key with peer's RSA Public Key
+            const exportedAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
+            const encryptedAesKeyBuf = await window.crypto.subtle.encrypt(
+                { name: "RSA-OAEP" },
+                peerPublicKey,
+                exportedAesKey
+            );
+
+            return {
+                ciphertext: arrayBufferToBase64(cipherTextBuf),
+                iv: arrayBufferToBase64(iv),
+                encryptedKey: arrayBufferToBase64(encryptedAesKeyBuf)
+            };
+        }
+
+        async function decryptPayload(payload) {
+            const cipherBuf = base64ToArrayBuffer(payload.ciphertext);
+            const ivBuf = base64ToArrayBuffer(payload.iv);
+            const encKeyBuf = base64ToArrayBuffer(payload.encryptedKey);
+
+            // Decrypt AES key using my RSA Private Key
+            const rawAesKey = await window.crypto.subtle.decrypt(
+                { name: "RSA-OAEP" },
+                myKeyPair.privateKey,
+                encKeyBuf
+            );
+
+            const aesKey = await window.crypto.subtle.importKey(
+                "raw",
+                rawAesKey,
+                { name: "AES-GCM" },
+                false,
+                ["decrypt"]
+            );
+
+            const decryptedBuf = await window.crypto.subtle.decrypt(
+                { name: "AES-GCM", iv: ivBuf },
+                aesKey,
+                cipherBuf
+            );
+
+            return new TextDecoder().decode(decryptedBuf);
+        }
+
+        // =========================================================================
+        // WEBRTC SERVERLESS P2P SIGNALING & CONNECTION
+        // =========================================================================
+        function initWebRTC() {
+            const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+            peerConnection = new RTCPeerConnection(config);
+
+            peerConnection.onicecandidate = (event) => {
+                if (!event.candidate) {
+                    // ICE Gathering completed -> update signaling textareas
+                    updateSignalingOutput();
+                }
+            };
+
+            peerConnection.ondatachannel = (event) => {
+                dataChannel = event.channel;
+                setupDataChannel();
+            };
+        }
+
+        function updateSignalingOutput() {
+            if (!peerConnection.localDescription) return;
+            
+            exportPublicKey().then(pubKeyBase64 => {
+                const signalData = {
+                    sdp: peerConnection.localDescription,
+                    pubKey: pubKeyBase64
+                };
+                const jsonStr = btoa(JSON.stringify(signalData));
+
+                if (peerConnection.localDescription.type === 'offer') {
+                    document.getElementById('host-offer-out').value = jsonStr;
+                } else if (peerConnection.localDescription.type === 'answer') {
+                    document.getElementById('join-answer-out').value = jsonStr;
+                }
+            });
+        }
+
+        async function switchSignalingTab(tab) {
+            const hostBtn = document.getElementById('tab-host-btn');
+            const joinBtn = document.getElementById('tab-join-btn');
+            const hostContent = document.getElementById('tab-host-content');
+            const joinContent = document.getElementById('tab-join-content');
+
+            if (tab === 'host') {
+                hostBtn.className = "flex-1 py-2 rounded-lg font-bold bg-cyber-accent text-slate-950 transition flex items-center justify-center gap-2";
+                joinBtn.className = "flex-1 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2";
+                hostContent.classList.remove('hidden');
+                joinContent.classList.add('hidden');
+
+                // Create Offer as Host
+                if (!peerConnection.localDescription) {
+                    dataChannel = peerConnection.createDataChannel("ghostchat-channel");
+                    setupDataChannel();
+
+                    const offer = await peerConnection.createOffer();
+                    await peerConnection.setLocalDescription(offer);
+                }
+            } else {
+                joinBtn.className = "flex-1 py-2 rounded-lg font-bold bg-cyber-purple text-white transition flex items-center justify-center gap-2";
+                hostBtn.className = "flex-1 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2";
+                joinContent.classList.remove('hidden');
+                hostContent.classList.add('hidden');
+            }
+        }
+
+        async function acceptAnswerAsHost() {
+            const rawVal = document.getElementById('host-answer-in').value.trim();
+            if (!rawVal) return showToast('Veuillez coller le token de réponse');
+
+            try {
+                const signalData = JSON.parse(atob(rawVal));
+                await importPeerPublicKey(signalData.pubKey);
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
+                showToast('Token de réponse accepté ! Établissement de la connexion...');
+            } catch (err) {
+                showToast('Erreur : Token invalide ou corrompu');
+            }
+        }
+
+        async function generateAnswerAsGuest() {
+            const rawVal = document.getElementById('join-offer-in').value.trim();
+            if (!rawVal) return showToast('Veuillez coller le token d\'offre');
+
+            try {
+                const signalData = JSON.parse(atob(rawVal));
+                await importPeerPublicKey(signalData.pubKey);
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
+
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                showToast('Réponse générée ! Renvoyez le token à l\'hôte.');
+            } catch (err) {
+                showToast('Erreur : Token d\'offre invalide');
+            }
+        }
+
+        function setupDataChannel() {
+            dataChannel.onopen = () => {
+                document.getElementById('setup-overlay').classList.add('hidden');
+                updateStatusUI(true);
+                playSound('connect');
+                showToast('CANAL P2P ÉTABLI AVEC SUCCÈS !');
+            };
+
+            dataChannel.onclose = () => {
+                updateStatusUI(false);
+                showToast('Connexion P2P fermée');
+            };
+
+            dataChannel.onmessage = async (event) => {
+                const packet = JSON.parse(event.data);
+
+                if (packet.type === 'typing') {
+                    showTypingIndicator();
+                } else if (packet.type === 'chat') {
+                    hideTypingIndicator();
+                    const decryptedText = await decryptPayload(packet.payload);
+                    renderIncomingMessage(decryptedText, packet.ttl);
+                    playSound('receive');
+                }
+            };
+        }
+
+        function updateStatusUI(connected) {
+            const dot = document.getElementById('connection-status-dot');
+            const text = document.getElementById('connection-status-text');
+            const input = document.getElementById('chat-input');
+            const sendBtn = document.getElementById('send-btn');
+
+            if (connected) {
+                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+                text.className = "text-emerald-400 font-bold";
+                text.innerText = "Connecté (P2P E2EE Direct)";
+                
+                input.disabled = false;
+                input.placeholder = "Saisissez un message ultra-sécurisé...";
+                sendBtn.disabled = false;
+                sendBtn.className = "bg-cyber-accent hover:bg-teal-300 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-mono glow-accent cursor-pointer";
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-rose-500";
+                text.className = "text-rose-400";
+                text.innerText = "Non connecté";
+
+                input.disabled = true;
+                input.placeholder = "Veuillez d'abord établir la connexion P2P...";
+                sendBtn.disabled = true;
+                sendBtn.className = "bg-cyber-accent/30 text-slate-500 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-mono cursor-not-allowed";
+            }
+        }
+
+        // =========================================================================
+        // CHAT MESSAGING & TYPING LOGIC
+        // =========================================================================
+        async function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            const ttl = parseInt(document.getElementById('ttl-select').value, 10);
+
+            if (!text || !dataChannel || dataChannel.readyState !== 'open') return;
+
+            input.value = '';
+
+            // Encrypt using Web Crypto
+            const encryptedPayload = await encryptPayload(text);
+
+            // Send packet over WebRTC
+            dataChannel.send(JSON.stringify({
+                type: 'chat',
+                payload: encryptedPayload,
+                ttl: ttl
+            }));
+
+            // Render on local screen
+            renderOutgoingMessage(text, ttl);
+            playSound('send');
+        }
+
+        function handleTyping() {
+            if (!dataChannel || dataChannel.readyState !== 'open') return;
+            
+            if (!typingTimeout) {
+                dataChannel.send(JSON.stringify({ type: 'typing' }));
+            }
+            clearTimeout(typingTimeout);
+            typingTimeout = setTimeout(() => { typingTimeout = null; }, 2000);
+        }
+
+        function showTypingIndicator() {
+            const el = document.getElementById('typing-indicator');
+            el.classList.remove('hidden');
+            setTimeout(() => { el.classList.add('hidden'); }, 3000);
+        }
+
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').classList.add('hidden');
+        }
+
+        function renderOutgoingMessage(text, ttl) {
+            const container = document.getElementById('messages-container');
+            const msgId = 'msg-' + Date.now();
+            
+            const msgEl = document.createElement('div');
+            msgEl.id = msgId;
+            msgEl.className = "flex flex-col items-end space-y-1";
+
+            const timeStr = new Date().toLocaleTimeString().substring(0, 5);
+
+            msgEl.innerHTML = `
+                <div class="max-w-[80%] rounded-2xl p-3 bg-cyber-accent/10 border border-cyber-accent/30 text-slate-100 rounded-br-none space-y-1">
+                    <div class="flex items-center justify-between gap-4 text-[10px] font-mono text-cyber-accent font-bold">
+                        <span>VOUS</span>
+                        <span class="text-slate-500 font-normal">${timeStr}</span>
+                    </div>
+                    <div class="text-xs break-words">${escapeHtml(text)}</div>
+                    ${ttl > 0 ? `<div class="text-[10px] font-mono text-amber-400 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> Autodestruction dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
+                </div>
+            `;
+
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+
+            if (ttl > 0) setupSelfDestruct(msgId, ttl);
+        }
+
+        function renderIncomingMessage(text, ttl) {
+            const container = document.getElementById('messages-container');
+            const msgId = 'msg-' + Date.now();
+
+            const msgEl = document.createElement('div');
+            msgEl.id = msgId;
+            msgEl.className = "flex flex-col items-start space-y-1";
+
+            const timeStr = new Date().toLocaleTimeString().substring(0, 5);
+
+            msgEl.innerHTML = `
+                <div class="max-w-[80%] rounded-2xl p-3 bg-cyber-card border border-cyber-border text-slate-100 rounded-bl-none space-y-1">
+                    <div class="flex items-center justify-between gap-4 text-[10px] font-mono text-cyber-purple font-bold">
+                        <span>PEER (DISTANT)</span>
+                        <span class="text-slate-500 font-normal">${timeStr}</span>
+                    </div>
+                    <div class="text-xs break-words">${escapeHtml(text)}</div>
+                    ${ttl > 0 ? `<div class="text-[10px] font-mono text-amber-400 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> Autodestruction dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
+                </div>
+            `;
+
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+
+            if (ttl > 0) setupSelfDestruct(msgId, ttl);
+        }
+
+        function setupSelfDestruct(msgId, ttlSeconds) {
+            let timeLeft = ttlSeconds;
+            const timerInterval = setInterval(() => {
+                timeLeft--;
+                const countdownEl = document.getElementById(`ttl-${msgId}`);
+                if (countdownEl) countdownEl.innerText = timeLeft;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    const msgEl = document.getElementById(msgId);
+                    if (msgEl) {
+                        msgEl.classList.add('animate-disintegrate');
+                        setTimeout(() => msgEl.remove(), 600);
+                    }
+                }
+            }, 1000);
+        }
+
+        // =========================================================================
+        // EMERGENCY KILL SWITCH & UTILITIES
+        // =========================================================================
+        function emergencyWipe() {
+            playSound('wipe');
+
+            // 1. Close WebRTC Connections
+            if (dataChannel) dataChannel.close();
+            if (peerConnection) peerConnection.close();
+
+            // 2. Clear RAM memory
+            myKeyPair = null;
+            peerPublicKey = null;
+
+            // 3. Clear Chat UI
+            const container = document.getElementById('messages-container');
+            container.innerHTML = `
+                <div class="max-w-md mx-auto my-6 p-4 rounded-xl bg-cyber-danger/10 border border-cyber-danger/30 text-center space-y-2">
+                    <div class="inline-flex p-2 rounded-full bg-cyber-danger/20 text-cyber-danger">
+                        <i data-lucide="skull" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-bold text-cyber-danger text-sm font-mono">PURGE D'URGENCE EXÉCUTÉE</h3>
+                    <p class="text-[11px] text-slate-400 font-mono">Toutes les clés RSA/AES en mémoire RAM ont été détruites. Le salon P2P a été fermé.</p>
+                </div>
+            `;
+
+            // 4. Reset Inputs & Show Setup Overlay
+            document.getElementById('host-offer-out').value = '';
+            document.getElementById('host-answer-in').value = '';
+            document.getElementById('join-offer-in').value = '';
+            document.getElementById('join-answer-out').value = '';
+
+            updateStatusUI(false);
+            document.getElementById('setup-overlay').classList.remove('hidden');
+
+            showToast('PURGE TOTALE EXÉCUTÉE (RAM nettoyée)');
+            lucide.createIcons();
+
+            // Re-init WebRTC for next session
+            initWebRTC();
+            generateUserKeys();
+        }
+
+        function showQRCode(elementId) {
+            const val = document.getElementById(elementId).value;
+            if (!val) return showToast('Aucun token disponible à afficher en QR Code');
+
+            const qr = new QRious({
+                element: document.getElementById('qr-canvas'),
+                value: val,
+                size: 240,
+                backgroundAlpha: 0,
+                foreground: '#090d16'
+            });
+
+            document.getElementById('qr-modal').classList.remove('hidden');
+        }
+
+        function closeQRModal() {
+            document.getElementById('qr-modal').classList.add('hidden');
+        }
+
+        function copyElementText(elementId) {
+            const text = document.getElementById(elementId).value;
+            if (!text) return;
+
+            navigator.clipboard.writeText(text).then(() => {
+                showToast('Token copié dans le presse-papier !');
+            }).catch(() => {
+                // Fallback execCommand
+                const el = document.getElementById(elementId);
+                el.select();
+                document.execCommand('copy');
+                showToast('Token copié dans le presse-papier !');
+            });
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = msg;
+            toast.classList.remove('opacity-0');
+            setTimeout(() => { toast.classList.add('opacity-0'); }, 3000);
+        }
+
+        function arrayBufferToBase64(buffer) {
+            let binary = '';
+            const bytes = new Uint8Array(buffer);
+            for (let i = 0; i < bytes.byteLength; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+    </script>
+</body>
+</html>

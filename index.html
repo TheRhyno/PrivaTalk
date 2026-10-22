@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-<html lang="fr" class="dark">
+<html lang="fr" class="h-full bg-slate-950">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GhostChat PWA - Messagerie P2P E2EE</title>
+    <title>PrivaTalk - Messagerie Privée Directe</title>
     
-    <!-- PWA & Mobile Meta Tags -->
-    <meta name="theme-color" content="#090d16">
+    <!-- Meta PWA -->
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="GhostChat">
-    <meta name="description" content="Messagerie ultra-sécurisée 100% P2P sans serveur avec WebRTC et E2EE">
+    <meta name="apple-mobile-web-app-title" content="PrivaTalk">
+    <meta name="description" content="Messagerie ultra-sécurisée et privée d'appareil à appareil">
 
-    <!-- Tailwind CSS CDN -->
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -20,257 +20,243 @@
             theme: {
                 extend: {
                     colors: {
-                        cyber: {
-                            bg: '#07090e',
-                            dark: '#0d121d',
-                            card: '#131b2e',
-                            border: '#1f2d4a',
-                            accent: '#00ffcc',
-                            purple: '#a855f7',
-                            danger: '#ff2a6d',
-                            warning: '#ffb703'
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
                         }
-                    },
-                    fontFamily: {
-                        mono: ['JetBrains Mono', 'Fira Code', 'Monaco', 'monospace'],
-                        sans: ['Inter', 'sans-serif']
                     }
                 }
             }
         }
     </script>
 
-    <!-- Lucide Icons & QR Code Generator -->
+    <!-- Icons & QR Code Generator -->
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #07090e;
-            color: #e2e8f0;
-            user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-        .font-mono { font-family: 'JetBrains Mono', monospace; }
-        
+
         /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 4px; height: 4px; }
-        ::-webkit-scrollbar-track { background: #07090e; }
-        ::-webkit-scrollbar-thumb { background: #1f2d4a; border-radius: 2px; }
-        ::-webkit-scrollbar-thumb:hover { background: #00ffcc; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
 
-        /* Custom Animations & Glows */
-        .glow-accent { box-shadow: 0 0 20px rgba(0, 255, 204, 0.15); }
-        .glow-danger { box-shadow: 0 0 20px rgba(255, 42, 109, 0.2); }
-        
-        .cyber-grid {
-            background-size: 24px 24px;
-            background-image: 
-                linear-gradient(to right, rgba(31, 45, 74, 0.2) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(31, 45, 74, 0.2) 1px, transparent 1px);
+        /* Effet de disparition progressive des messages */
+        @keyframes fadeOutUp {
+            0% { opacity: 1; transform: translateY(0) scale(1); }
+            100% { opacity: 0; transform: translateY(-12px) scale(0.95); filter: blur(4px); }
         }
-
-        /* Message Disintegration Effect */
-        @keyframes disintegrate {
-            0% { opacity: 1; transform: scale(1) translateY(0); filter: blur(0px); }
-            50% { opacity: 0.5; transform: scale(0.95) translateY(-4px); filter: blur(2px); }
-            100% { opacity: 0; transform: scale(0.8) translateY(-10px); filter: blur(8px); }
-        }
-        .animate-disintegrate {
-            animation: disintegrate 0.6s ease-out forwards;
+        .animate-destroy {
+            animation: fadeOutUp 0.5s ease-forwards;
         }
     </style>
 </head>
-<body class="h-screen w-screen flex flex-col overflow-hidden cyber-grid select-none">
+<body class="h-full w-full flex flex-col bg-slate-950 text-slate-100 overflow-hidden select-none">
 
-    <!-- TOP APPLICATION HEADER -->
-    <header class="bg-cyber-dark/95 border-b border-cyber-border px-4 py-3 flex items-center justify-between shrink-0 z-20 backdrop-blur-md">
+    <!-- BARRE DE NAVIGATION ET EN-TÊTE -->
+    <header class="h-16 bg-slate-900/90 border-b border-slate-800 px-4 sm:px-6 flex items-center justify-between shrink-0 z-20 backdrop-blur-md">
         <div class="flex items-center gap-3">
-            <div class="p-2 bg-cyber-accent/10 border border-cyber-accent/30 rounded-xl text-cyber-accent shadow-sm">
-                <i data-lucide="ghost" class="w-5 h-5"></i>
+            <div class="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 flex items-center justify-center text-brand-500">
+                <i data-lucide="shield-check" class="w-5 h-5"></i>
             </div>
             <div>
                 <div class="flex items-center gap-2">
-                    <h1 class="font-bold text-base tracking-wider bg-gradient-to-r from-cyber-accent via-teal-300 to-cyber-purple bg-clip-text text-transparent">
-                        GHOSTCHAT
-                    </h1>
-                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-cyber-accent/10 text-cyber-accent border border-cyber-accent/20">P2P PWA</span>
+                    <h1 class="font-bold text-slate-100 text-sm sm:text-base tracking-tight">PrivaTalk</h1>
+                    <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">Privé & Direct</span>
                 </div>
-                <p class="text-[11px] text-slate-400 flex items-center gap-1 font-mono">
-                    <span id="connection-status-dot" class="w-2 h-2 rounded-full bg-rose-500"></span>
-                    <span id="connection-status-text" class="text-rose-400">Non connecté</span>
-                </p>
+                <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                    <span id="status-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                    <span id="status-text" class="text-xs">En attente de connexion</span>
+                </div>
             </div>
         </div>
 
-        <!-- Header Actions -->
+        <!-- Actions rapides -->
         <div class="flex items-center gap-2">
-            <!-- PWA Install Prompt Button -->
-            <button id="pwa-install-btn" class="hidden bg-cyber-accent/10 hover:bg-cyber-accent/20 text-cyber-accent border border-cyber-accent/40 text-xs font-mono font-bold px-3 py-1.5 rounded-lg transition items-center gap-1.5">
-                <i data-lucide="download text-xs" class="w-3.5 h-3.5"></i>
-                <span class="hidden sm:inline">Installer App</span>
+            <!-- Bouton d'installation PWA -->
+            <button id="pwa-install-btn" class="hidden bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium px-3 py-2 rounded-xl transition items-center gap-1.5">
+                <i data-lucide="download" class="w-4 h-4 text-brand-500"></i>
+                <span class="hidden sm:inline">Installer l'application</span>
             </button>
 
-            <!-- Sound Toggle -->
-            <button id="sound-btn" onclick="toggleSound()" class="p-2 bg-cyber-card border border-cyber-border hover:border-slate-500 rounded-lg text-slate-300 transition" title="Activer/Désactiver le son">
-                <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4 text-cyber-accent"></i>
+            <!-- Mode Silence -->
+            <button id="sound-btn" onclick="toggleSound()" class="p-2.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded-xl text-slate-300 transition" title="Activer/Désactiver le son">
+                <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4 text-brand-500"></i>
             </button>
 
-            <!-- EMERGENCY KILL SWITCH BUTTON -->
-            <button onclick="emergencyWipe()" class="bg-cyber-danger/10 hover:bg-cyber-danger/20 text-cyber-danger border border-cyber-danger/40 hover:border-cyber-danger px-3 py-1.5 rounded-lg text-xs font-mono font-bold transition flex items-center gap-1.5 glow-danger" title="Effacer immédiatement toutes les données et fermer la session">
-                <i data-lucide="flame" class="w-4 h-4"></i>
-                <span class="hidden md:inline">KILL SWITCH</span>
+            <!-- BOUTON D'URGENCE / FERMETURE SÉCURISÉE DES DEUX CÔTÉS -->
+            <button onclick="emergencyWipe(true)" class="bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/30 px-3 py-2 rounded-xl text-xs font-semibold transition flex items-center gap-1.5" title="Effacer instantanément la discussion pour les deux personnes">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                <span class="hidden md:inline">Effacer tout</span>
             </button>
         </div>
     </header>
 
-    <!-- MAIN APP CONTAINER -->
+    <!-- ZONE PRINCIPALE -->
     <main class="flex-1 flex overflow-hidden relative">
 
-        <!-- SETUP & SIGNALING MODAL / OVERLAY (Shown when disconnected) -->
-        <div id="setup-overlay" class="absolute inset-0 bg-cyber-bg/95 z-10 p-4 sm:p-6 overflow-y-auto flex flex-col items-center justify-center backdrop-blur-md">
-            <div class="max-w-xl w-full bg-cyber-card border border-cyber-border rounded-2xl p-5 sm:p-6 shadow-2xl space-y-6">
+        <!-- ÉCRAN DE CONNEXION -->
+        <div id="setup-overlay" class="absolute inset-0 bg-slate-950/95 z-30 p-4 sm:p-6 overflow-y-auto flex flex-col items-center justify-center backdrop-blur-lg">
+            <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6">
                 
-                <!-- Overlay Title -->
-                <div class="text-center space-y-1">
-                    <h2 class="text-xl font-bold text-slate-100 flex items-center justify-center gap-2">
-                        <i data-lucide="shield-check" class="w-5 h-5 text-cyber-accent"></i> Initialisation du Salon P2P
-                    </h2>
-                    <p class="text-xs text-slate-400 font-mono">Chiffrement End-to-End (Web Crypto API) + WebRTC sans serveur</p>
+                <div class="text-center space-y-1.5">
+                    <h2 class="text-xl font-bold text-slate-100">Démarrer une discussion</h2>
+                    <p class="text-xs text-slate-400">Échangez directement avec un ami sans passer par aucun serveur intermédiaire.</p>
                 </div>
 
-                <!-- Tabs: Host or Join -->
-                <div class="flex bg-cyber-dark p-1 rounded-xl border border-cyber-border font-mono text-xs">
-                    <button id="tab-host-btn" onclick="switchSignalingTab('host')" class="flex-1 py-2 rounded-lg font-bold bg-cyber-accent text-slate-950 transition flex items-center justify-center gap-2">
-                        <i data-lucide="plus-circle" class="w-4 h-4"></i> 1. Créer le salon (Hôte)
+                <div class="grid grid-cols-2 bg-slate-950 p-1 rounded-2xl border border-slate-800/80 text-xs font-medium">
+                    <button id="tab-host-btn" onclick="switchTab('host')" class="py-2.5 rounded-xl font-semibold bg-brand-500 text-white transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i> Créer un salon
                     </button>
-                    <button id="tab-join-btn" onclick="switchSignalingTab('join')" class="flex-1 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2">
-                        <i data-lucide="arrow-right-circle" class="w-4 h-4"></i> 2. Rejoindre un salon
+                    <button id="tab-join-btn" onclick="switchTab('join')" class="py-2.5 rounded-xl font-semibold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5">
+                        <i data-lucide="arrow-right-circle" class="w-4 h-4"></i> Rejoindre
                     </button>
                 </div>
 
-                <!-- TAB CONTENT: HOST SALON -->
+                <!-- CRÉER UN SALON -->
                 <div id="tab-host-content" class="space-y-4">
                     <div class="space-y-2">
-                        <label class="text-xs font-mono text-slate-300 flex justify-between">
-                            <span>Étape A : Votre Token d'Invitation (OFFER)</span>
-                            <span class="text-cyber-accent font-bold">À envoyer à votre ami</span>
+                        <label class="text-xs font-semibold text-slate-300 flex justify-between items-center">
+                            <span>1. Clé d'invitation :</span>
+                            <span class="text-brand-500">Transmettez-la à votre ami</span>
                         </label>
-                        <div class="relative">
-                            <textarea id="host-offer-out" readonly rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-emerald-400 focus:outline-none resize-none" placeholder="Génération du token d'offre WebRTC en cours..."></textarea>
-                            <div class="absolute bottom-2 right-2 flex gap-1">
-                                <button onclick="copyElementText('host-offer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-accent text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
-                                    <i data-lucide="copy" class="w-3 h-3 text-cyber-accent"></i> Copier
+                        
+                        <button id="btn-generate-offer" onclick="startHostGeneration()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 font-semibold py-2.5 rounded-2xl text-xs transition flex items-center justify-center gap-2">
+                            <i data-lucide="key" class="w-4 h-4 text-brand-500"></i> Générer la clé
+                        </button>
+
+                        <div id="host-offer-container" class="hidden relative">
+                            <textarea id="host-offer-out" readonly rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs font-mono text-emerald-400 focus:outline-none resize-none break-all" placeholder="Génération de la clé..."></textarea>
+                            <div class="absolute bottom-2 right-2 flex gap-1.5">
+                                <button onclick="copyElementText('host-offer-out')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1 transition">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-brand-500"></i> Copier
                                 </button>
-                                <button onclick="showQRCode('host-offer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-accent text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
-                                    <i data-lucide="qr-code" class="w-3 h-3 text-cyber-purple"></i> QR
+                                <button onclick="showQRCode('host-offer-out')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1 transition">
+                                    <i data-lucide="qr-code" class="w-3.5 h-3.5 text-slate-300"></i> QR
                                 </button>
                             </div>
                         </div>
                     </div>
 
-                    <div class="space-y-2 pt-2 border-t border-cyber-border/60">
-                        <label class="text-xs font-mono text-slate-300">Étape B : Collez le Token de Réponse de votre ami (ANSWER)</label>
-                        <textarea id="host-answer-in" rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-slate-200 focus:border-cyber-accent focus:outline-none resize-none" placeholder="Collez ici le token Answer généré par votre invité..."></textarea>
-                        <button onclick="acceptAnswerAsHost()" class="w-full bg-cyber-accent hover:bg-teal-300 text-slate-950 font-bold py-2.5 rounded-xl text-xs font-mono transition flex items-center justify-center gap-2 glow-accent">
-                            <i data-lucide="zap" class="w-4 h-4"></i> Finaliser la Connexion P2P
+                    <div class="space-y-2 pt-2 border-t border-slate-800">
+                        <label class="text-xs font-semibold text-slate-300">2. Collez la réponse de votre ami :</label>
+                        <textarea id="host-answer-in" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 focus:border-brand-500 focus:outline-none resize-none break-all" placeholder="Collez le code de confirmation reçu..."></textarea>
+                        <button onclick="acceptAnswerAsHost()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-3 rounded-2xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-brand-500/20">
+                            <i data-lucide="check-circle-2" class="w-4 h-4"></i> Valider et se connecter
                         </button>
                     </div>
                 </div>
 
-                <!-- TAB CONTENT: JOIN SALON -->
+                <!-- REJOINDRE UN SALON -->
                 <div id="tab-join-content" class="hidden space-y-4">
                     <div class="space-y-2">
-                        <label class="text-xs font-mono text-slate-300">Étape 1 : Collez le Token d'Invitation reçu (OFFER)</label>
-                        <textarea id="join-offer-in" rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-slate-200 focus:border-cyber-purple focus:outline-none resize-none" placeholder="Collez ici le token Offer fourni par l'hôte..."></textarea>
-                        <button onclick="generateAnswerAsGuest()" class="w-full bg-cyber-purple hover:bg-purple-400 text-white font-bold py-2.5 rounded-xl text-xs font-mono transition flex items-center justify-center gap-2">
-                            <i data-lucide="key" class="w-4 h-4"></i> Générer le Token de Réponse
+                        <label class="text-xs font-semibold text-slate-300">1. Collez la clé d'invitation reçue :</label>
+                        <textarea id="join-offer-in" rows="2" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs text-slate-200 focus:border-brand-500 focus:outline-none resize-none break-all" placeholder="Collez le code d'invitation de votre ami..."></textarea>
+                        <button onclick="generateAnswerAsGuest()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 font-semibold py-2.5 rounded-2xl text-xs transition flex items-center justify-center gap-2">
+                            <i data-lucide="key-round" class="w-4 h-4 text-brand-500"></i> Générer mon code de réponse
                         </button>
                     </div>
 
-                    <div class="space-y-2 pt-2 border-t border-cyber-border/60">
-                        <label class="text-xs font-mono text-slate-300 flex justify-between">
-                            <span>Étape 2 : Votre Token de Réponse (ANSWER)</span>
-                            <span class="text-cyber-purple font-bold">À renvoyer à l'hôte</span>
+                    <div class="space-y-2 pt-2 border-t border-slate-800">
+                        <label class="text-xs font-semibold text-slate-300 flex justify-between">
+                            <span>2. Votre code de confirmation :</span>
+                            <span class="text-brand-500">À renvoyer à l'hôte</span>
                         </label>
                         <div class="relative">
-                            <textarea id="join-answer-out" readonly rows="3" class="w-full bg-cyber-dark border border-cyber-border rounded-xl p-3 text-[11px] font-mono text-purple-300 focus:outline-none resize-none" placeholder="Le token de réponse apparaîtra ici..."></textarea>
-                            <div class="absolute bottom-2 right-2 flex gap-1">
-                                <button onclick="copyElementText('join-answer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-purple text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
-                                    <i data-lucide="copy" class="w-3 h-3 text-cyber-purple"></i> Copier
+                            <textarea id="join-answer-out" readonly rows="3" class="w-full bg-slate-950 border border-slate-800 rounded-2xl p-3 text-xs font-mono text-brand-500 focus:outline-none resize-none break-all" placeholder="Le code apparaîtra ici..."></textarea>
+                            <div class="absolute bottom-2 right-2 flex gap-1.5">
+                                <button onclick="copyElementText('join-answer-out')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1 transition">
+                                    <i data-lucide="copy" class="w-3.5 h-3.5 text-brand-500"></i> Copier
                                 </button>
-                                <button onclick="showQRCode('join-answer-out')" class="bg-cyber-card border border-cyber-border hover:border-cyber-purple text-slate-200 text-xs px-2.5 py-1 rounded-lg font-mono flex items-center gap-1 transition">
-                                    <i data-lucide="qr-code" class="w-3 h-3 text-cyber-accent"></i> QR
+                                <button onclick="showQRCode('join-answer-out')" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-1.5 rounded-xl border border-slate-700 flex items-center gap-1 transition">
+                                    <i data-lucide="qr-code" class="w-3.5 h-3.5 text-slate-300"></i> QR
                                 </button>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Footer Security Badge -->
-                <div class="pt-2 flex items-center justify-between text-[10px] font-mono text-slate-500 border-t border-cyber-border/40">
-                    <span class="flex items-center gap-1 text-emerald-400">
-                        <i data-lucide="shield" class="w-3 h-3"></i> RSA-OAEP + AES-GCM 256-bit
-                    </span>
-                    <span>Zero Data Store / RAM Only</span>
+                <div class="pt-2 flex items-center justify-center gap-2 text-[11px] text-slate-500 border-t border-slate-800/60">
+                    <i data-lucide="lock" class="w-3.5 h-3.5 text-emerald-500"></i>
+                    <span>Chiffrement total de bout en bout • Aucune donnée stockée</span>
                 </div>
 
             </div>
         </div>
 
-        <!-- CHAT DISPLAY AREA -->
-        <div class="flex-1 flex flex-col h-full bg-cyber-bg overflow-hidden">
+        <!-- FENÊTRE DE DISCUSSION -->
+        <div class="flex-1 flex flex-col h-full bg-slate-950 overflow-hidden">
             
-            <!-- Messages Container -->
-            <div id="messages-container" class="flex-1 p-4 overflow-y-auto space-y-4 font-sans text-xs">
-                <!-- Welcome Banner -->
-                <div id="welcome-banner" class="max-w-md mx-auto my-6 p-4 rounded-xl bg-cyber-card/60 border border-cyber-border text-center space-y-2">
-                    <div class="inline-flex p-2 rounded-full bg-cyber-accent/10 text-cyber-accent">
-                        <i data-lucide="lock" class="w-5 h-5"></i>
+            <div id="messages-container" class="flex-1 p-4 sm:p-6 overflow-y-auto space-y-4 text-xs sm:text-sm">
+                <div id="welcome-banner" class="max-w-md mx-auto my-8 p-5 rounded-3xl bg-slate-900/80 border border-slate-800 text-center space-y-2">
+                    <div class="inline-flex p-3 rounded-2xl bg-brand-500/10 text-brand-500 mb-1">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="font-bold text-slate-200 text-sm">Canal Direct Peer-to-Peer Sécurisé</h3>
-                    <p class="text-[11px] text-slate-400 font-mono">
-                        Les messages sont chiffrés sur votre appareil via Web Crypto et envoyés directement via le DataChannel WebRTC. Aucun serveur intermédiaire.
+                    <h3 class="font-bold text-slate-100 text-sm">Discussion sécurisée prête</h3>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                        Tous les messages et photos sont chiffrés sur votre appareil et transmis directement à votre interlocuteur.
                     </p>
                 </div>
             </div>
 
-            <!-- Typing Indicator -->
-            <div id="typing-indicator" class="hidden px-4 py-1 text-[10px] font-mono text-cyber-accent flex items-center gap-2">
+            <div id="typing-indicator" class="hidden px-6 py-1.5 text-xs text-brand-500 flex items-center gap-2 font-medium">
                 <span class="flex gap-1">
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent animate-bounce"></span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent animate-bounce [animation-delay:0.2s]"></span>
-                    <span class="w-1.5 h-1.5 rounded-full bg-cyber-accent animate-bounce [animation-delay:0.4s]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce [animation-delay:0.2s]"></span>
+                    <span class="w-1.5 h-1.5 rounded-full bg-brand-500 animate-bounce [animation-delay:0.4s]"></span>
                 </span>
-                <span>L'interlocuteur saisit un message secret...</span>
+                <span>Votre correspondant écrit un message...</span>
             </div>
 
-            <!-- Chat Input Area -->
-            <div class="p-3 bg-cyber-dark/90 border-t border-cyber-border flex items-center gap-2 shrink-0">
+            <!-- Aperçu de l'image -->
+            <div id="image-preview-container" class="hidden px-4 py-2 bg-slate-950 border-t border-slate-800 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img id="image-preview-thumb" src="" class="w-12 h-12 rounded-xl object-cover border border-brand-500/30" alt="Aperçu">
+                    <div>
+                        <p class="text-xs font-semibold text-slate-200">Image prête à être envoyée</p>
+                        <p class="text-[10px] text-slate-400">Cliquez sur Envoyer pour lancer le transfert chiffré</p>
+                    </div>
+                </div>
+                <button onclick="cancelSelectedImage()" class="p-1.5 bg-slate-800 hover:bg-slate-700 text-rose-400 rounded-xl transition" title="Annuler l'image">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Champ de saisie -->
+            <div class="p-3 sm:p-4 bg-slate-900/80 border-t border-slate-800 flex items-center gap-2 shrink-0">
                 
-                <!-- Self Destruct Timer Selector -->
-                <div class="relative group">
-                    <select id="ttl-select" class="bg-cyber-card border border-cyber-border text-slate-300 text-xs font-mono rounded-xl px-2.5 py-2.5 focus:outline-none focus:border-cyber-accent appearance-none cursor-pointer pr-6">
-                        <option value="0">∞ Pas d'autodestruction</option>
-                        <option value="10">🔥 10 Secondes</option>
-                        <option value="30">🔥 30 Secondes</option>
-                        <option value="60">🔥 1 Minute</option>
+                <div class="relative">
+                    <select id="ttl-select" class="bg-slate-800 border border-slate-700 text-slate-200 text-xs font-medium rounded-2xl px-3 py-3 focus:outline-none focus:border-brand-500 appearance-none cursor-pointer pr-8">
+                        <option value="0">∞ Garder</option>
+                        <option value="10">🔥 10s</option>
+                        <option value="30">🔥 30s</option>
+                        <option value="60">🔥 1 min</option>
                     </select>
-                    <i data-lucide="timer" class="w-3.5 h-3.5 text-amber-400 absolute right-2 top-3 pointer-events-none"></i>
+                    <i data-lucide="timer" class="w-4 h-4 text-amber-400 absolute right-2.5 top-3.5 pointer-events-none"></i>
                 </div>
 
-                <!-- Input Message Box -->
-                <input type="text" id="chat-input" disabled placeholder="Veuillez d'abord établir la connexion P2P..." 
-                    class="flex-1 bg-cyber-card border border-cyber-border rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyber-accent transition font-sans"
-                    onkeydown="handleTyping(); if(event.key==='Enter') sendChatMessage();">
+                <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelected(event)">
+                <button id="image-btn" disabled onclick="document.getElementById('image-input').click()" class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed" title="Sélectionner une photo">
+                    <i data-lucide="image" class="w-4 h-4 text-brand-500"></i>
+                </button>
 
-                <!-- Send Button -->
-                <button id="send-btn" disabled onclick="sendChatMessage()" class="bg-cyber-accent/30 text-slate-500 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-mono cursor-not-allowed">
+                <input type="text" id="chat-input" disabled placeholder="Connectez-vous pour envoyer un message..." 
+                    class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition"
+                    onkeydown="handleTyping(); if(event.key==='Enter') sendMessageOrImage();">
+
+                <button id="send-btn" disabled onclick="sendMessageOrImage()" class="bg-slate-800 text-slate-500 font-semibold px-5 py-3 rounded-2xl transition flex items-center gap-2 text-xs sm:text-sm cursor-not-allowed shrink-0">
                     <span>Envoyer</span>
-                    <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                    <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
 
@@ -278,31 +264,28 @@
 
     </main>
 
-    <!-- QR CODE DISPLAY MODAL -->
-    <div id="qr-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-        <div class="bg-cyber-card border border-cyber-border rounded-2xl p-6 max-w-sm w-full flex flex-col items-center space-y-4">
-            <h3 class="font-bold text-sm font-mono text-slate-200">Scanner le QR Token</h3>
-            <div class="p-3 bg-white rounded-xl">
+    <!-- FENÊTRE MODALE QR CODE -->
+    <div id="qr-modal" class="hidden fixed inset-0 bg-slate-950/80 z-50 flex items-center justify-center p-4 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full flex flex-col items-center space-y-4 text-center shadow-2xl">
+            <h3 class="font-bold text-sm text-slate-100">Flash le code pour vous connecter</h3>
+            <div class="p-4 bg-white rounded-2xl">
                 <canvas id="qr-canvas"></canvas>
             </div>
-            <p class="text-[11px] font-mono text-slate-400 text-center">Faites scanner ce code QR par votre interlocuteur pour éviter le copier-coller.</p>
-            <button onclick="closeQRModal()" class="w-full bg-cyber-dark hover:bg-slate-800 text-slate-200 border border-cyber-border font-mono text-xs font-bold py-2 rounded-xl transition">
+            <p class="text-xs text-slate-400">Scannez ce code depuis le second appareil pour copier la clé instantanément.</p>
+            <button onclick="closeQRModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold py-2.5 rounded-xl transition">
                 Fermer
             </button>
         </div>
     </div>
 
-    <!-- NOTIFICATION TOAST -->
-    <div id="toast" class="fixed bottom-16 left-1/2 -translate-x-1/2 bg-cyber-card border border-cyber-accent text-cyber-accent font-mono text-xs px-4 py-2 rounded-xl shadow-2xl opacity-0 transition-opacity pointer-events-none z-50 flex items-center gap-2">
-        <i data-lucide="info" class="w-4 h-4"></i>
+    <!-- TOAST -->
+    <div id="toast" class="fixed bottom-20 left-1/2 -translate-x-1/2 bg-slate-800 border border-slate-700 text-slate-100 text-xs px-4 py-2.5 rounded-2xl shadow-2xl opacity-0 transition-all duration-300 pointer-events-none z-50 flex items-center gap-2">
+        <i data-lucide="info" class="w-4 h-4 text-brand-500"></i>
         <span id="toast-text">Notification</span>
     </div>
 
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- LOGIQUE JAVASCRIPT COMPLÈTE CORRIGÉE -->
     <script>
-        // =========================================================================
-        // GLOBAL STATE & PWA REGISTRATION
-        // =========================================================================
         let peerConnection = null;
         let dataChannel = null;
         let myKeyPair = null;
@@ -310,8 +293,11 @@
         let soundEnabled = true;
         let typingTimeout = null;
         let deferredPwaPrompt = null;
+        let stagedImageBase64 = null;
 
-        // Register Inline Service Worker & PWA Manifest
+        let incomingChunks = {};
+        const CHUNK_SIZE = 16384;
+
         window.addEventListener('load', async () => {
             lucide.createIcons();
             initPWA();
@@ -320,45 +306,49 @@
             initWebRTC();
         });
 
+        async function compressData(str) {
+            const stream = new Blob([str]).stream().pipeThrough(new CompressionStream('deflate'));
+            const response = new Response(stream);
+            const buffer = await response.arrayBuffer();
+            return arrayBufferToBase64(buffer);
+        }
+
+        async function decompressData(compressedBase64) {
+            const buffer = base64ToArrayBuffer(compressedBase64);
+            const stream = new Blob([buffer]).stream().pipeThrough(new DecompressionStream('deflate'));
+            const response = new Response(stream);
+            return await response.text();
+        }
+
         function initPWA() {
-            // Dynamic PWA Manifest via Data URI
             const manifest = {
-                name: "GhostChat P2P E2EE",
-                short_name: "GhostChat",
+                name: "PrivaTalk",
+                short_name: "PrivaTalk",
                 start_url: "./",
                 display: "standalone",
-                background_color: "#07090e",
-                theme_color: "#07090e",
+                background_color: "#020617",
+                theme_color: "#020617",
                 icons: [
-                    { src: "https://placehold.co/192x192/07090e/00ffcc?text=GHOST", sizes: "192x192", type: "image/png" },
-                    { src: "https://placehold.co/512x512/07090e/00ffcc?text=GHOST", sizes: "512x512", type: "image/png" }
+                    { src: "https://placehold.co/192x192/020617/0ea5e9?text=PT", sizes: "192x192", type: "image/png" },
+                    { src: "https://placehold.co/512x512/020617/0ea5e9?text=PT", sizes: "512x512", type: "image/png" }
                 ]
             };
-            const manifestStr = JSON.stringify(manifest);
-            const blobManifest = new Blob([manifestStr], { type: 'application/json' });
-            const manifestUrl = URL.createObjectURL(blobManifest);
-            
+            const blobManifest = new Blob([JSON.stringify(manifest)], { type: 'application/json' });
             const link = document.createElement('link');
             link.rel = 'manifest';
-            link.href = manifestUrl;
+            link.href = URL.createObjectURL(blobManifest);
             document.head.appendChild(link);
 
-            // Dynamic Service Worker via Blob
             if ('serviceWorker' in navigator) {
                 const swCode = `
-                    const CACHE_NAME = 'ghostchat-v1';
                     self.addEventListener('install', e => self.skipWaiting());
                     self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-                    self.addEventListener('fetch', e => {
-                        e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
-                    });
+                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
                 `;
                 const blobSW = new Blob([swCode], { type: 'text/javascript' });
-                const swUrl = URL.createObjectURL(blobSW);
-                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Error:', err));
+                navigator.serviceWorker.register(URL.createObjectURL(blobSW)).catch(() => {});
             }
 
-            // Capture PWA Install Prompt
             window.addEventListener('beforeinstallprompt', (e) => {
                 e.preventDefault();
                 deferredPwaPrompt = e;
@@ -371,24 +361,16 @@
                 if (deferredPwaPrompt) {
                     deferredPwaPrompt.prompt();
                     const choice = await deferredPwaPrompt.userChoice;
-                    if (choice.outcome === 'accepted') {
-                        showToast('PWA installée avec succès !');
-                    }
+                    if (choice.outcome === 'accepted') showToast('Application installée !');
                     deferredPwaPrompt = null;
                     document.getElementById('pwa-install-btn').classList.add('hidden');
                 }
             });
         }
 
-        // =========================================================================
-        // SYNTHESIZED WEB AUDIO API SOUNDS (No External Assets)
-        // =========================================================================
         let audioCtx = null;
-
         function initWebAudio() {
-            try {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            } catch(e) {}
+            try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
         }
 
         function playSound(type) {
@@ -399,41 +381,40 @@
             const gain = audioCtx.createGain();
             osc.connect(gain);
             gain.connect(audioCtx.destination);
-
             const now = audioCtx.currentTime;
 
             if (type === 'send') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(440, now);
-                osc.frequency.exponentialRampToValueAtTime(880, now + 0.15);
+                osc.frequency.setValueAtTime(520, now);
+                osc.frequency.exponentialRampToValueAtTime(880, now + 0.12);
+                gain.gain.setValueAtTime(0.1, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                osc.start(now);
+                osc.stop(now + 0.12);
+            } else if (type === 'receive') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(650, now);
+                osc.frequency.exponentialRampToValueAtTime(950, now + 0.15);
                 gain.gain.setValueAtTime(0.15, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
                 osc.start(now);
                 osc.stop(now + 0.15);
-            } else if (type === 'receive') {
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(600, now);
-                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
-                gain.gain.setValueAtTime(0.2, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
-                osc.start(now);
-                osc.stop(now + 0.2);
             } else if (type === 'connect') {
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(300, now);
-                osc.frequency.setValueAtTime(600, now + 0.1);
+                osc.frequency.setValueAtTime(440, now);
+                osc.frequency.setValueAtTime(880, now + 0.1);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                osc.start(now);
+                osc.stop(now + 0.25);
+            } else if (type === 'wipe') {
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(600, now);
+                osc.frequency.exponentialRampToValueAtTime(150, now + 0.3);
                 gain.gain.setValueAtTime(0.2, now);
                 gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
                 osc.start(now);
                 osc.stop(now + 0.3);
-            } else if (type === 'wipe') {
-                osc.type = 'sawtooth';
-                osc.frequency.setValueAtTime(800, now);
-                osc.frequency.exponentialRampToValueAtTime(100, now + 0.4);
-                gain.gain.setValueAtTime(0.3, now);
-                gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
-                osc.start(now);
-                osc.stop(now + 0.4);
             }
         }
 
@@ -442,8 +423,8 @@
             const icon = document.getElementById('sound-icon');
             if (soundEnabled) {
                 icon.setAttribute('data-lucide', 'volume-2');
-                icon.className = 'w-4 h-4 text-cyber-accent';
-                showToast('Effets sonores activés');
+                icon.className = 'w-4 h-4 text-brand-500';
+                showToast('Sons activés');
             } else {
                 icon.setAttribute('data-lucide', 'volume-x');
                 icon.className = 'w-4 h-4 text-slate-500';
@@ -452,17 +433,9 @@
             lucide.createIcons();
         }
 
-        // =========================================================================
-        // WEB CRYPTO API (RSA-2048 + AES-GCM-256 E2EE)
-        // =========================================================================
         async function generateUserKeys() {
             myKeyPair = await window.crypto.subtle.generateKey(
-                {
-                    name: "RSA-OAEP",
-                    modulusLength: 2048,
-                    publicExponent: new Uint8Array([1, 0, 1]),
-                    hash: "SHA-256"
-                },
+                { name: "RSA-OAEP", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
                 true,
                 ["encrypt", "decrypt"]
             );
@@ -485,29 +458,13 @@
         }
 
         async function encryptPayload(plaintext) {
-            // Generate temporary AES-256 key
-            const aesKey = await window.crypto.subtle.generateKey(
-                { name: "AES-GCM", length: 256 },
-                true,
-                ["encrypt", "decrypt"]
-            );
+            const aesKey = await window.crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"]);
             const iv = window.crypto.getRandomValues(new Uint8Array(12));
-
-            // Encrypt text with AES
             const encoder = new TextEncoder();
-            const cipherTextBuf = await window.crypto.subtle.encrypt(
-                { name: "AES-GCM", iv: iv },
-                aesKey,
-                encoder.encode(plaintext)
-            );
-
-            // Encrypt AES key with peer's RSA Public Key
+            
+            const cipherTextBuf = await window.crypto.subtle.encrypt({ name: "AES-GCM", iv: iv }, aesKey, encoder.encode(plaintext));
             const exportedAesKey = await window.crypto.subtle.exportKey("raw", aesKey);
-            const encryptedAesKeyBuf = await window.crypto.subtle.encrypt(
-                { name: "RSA-OAEP" },
-                peerPublicKey,
-                exportedAesKey
-            );
+            const encryptedAesKeyBuf = await window.crypto.subtle.encrypt({ name: "RSA-OAEP" }, peerPublicKey, exportedAesKey);
 
             return {
                 ciphertext: arrayBufferToBase64(cipherTextBuf),
@@ -521,42 +478,19 @@
             const ivBuf = base64ToArrayBuffer(payload.iv);
             const encKeyBuf = base64ToArrayBuffer(payload.encryptedKey);
 
-            // Decrypt AES key using my RSA Private Key
-            const rawAesKey = await window.crypto.subtle.decrypt(
-                { name: "RSA-OAEP" },
-                myKeyPair.privateKey,
-                encKeyBuf
-            );
-
-            const aesKey = await window.crypto.subtle.importKey(
-                "raw",
-                rawAesKey,
-                { name: "AES-GCM" },
-                false,
-                ["decrypt"]
-            );
-
-            const decryptedBuf = await window.crypto.subtle.decrypt(
-                { name: "AES-GCM", iv: ivBuf },
-                aesKey,
-                cipherBuf
-            );
+            const rawAesKey = await window.crypto.subtle.decrypt({ name: "RSA-OAEP" }, myKeyPair.privateKey, encKeyBuf);
+            const aesKey = await window.crypto.subtle.importKey("raw", rawAesKey, { name: "AES-GCM" }, false, ["decrypt"]);
+            const decryptedBuf = await window.crypto.subtle.decrypt({ name: "AES-GCM", iv: ivBuf }, aesKey, cipherBuf);
 
             return new TextDecoder().decode(decryptedBuf);
         }
 
-        // =========================================================================
-        // WEBRTC SERVERLESS P2P SIGNALING & CONNECTION
-        // =========================================================================
         function initWebRTC() {
             const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
             peerConnection = new RTCPeerConnection(config);
 
             peerConnection.onicecandidate = (event) => {
-                if (!event.candidate) {
-                    // ICE Gathering completed -> update signaling textareas
-                    updateSignalingOutput();
-                }
+                if (!event.candidate) updateSignalingOutput();
             };
 
             peerConnection.ondatachannel = (event) => {
@@ -565,47 +499,50 @@
             };
         }
 
-        function updateSignalingOutput() {
+        async function updateSignalingOutput() {
             if (!peerConnection.localDescription) return;
             
-            exportPublicKey().then(pubKeyBase64 => {
-                const signalData = {
-                    sdp: peerConnection.localDescription,
-                    pubKey: pubKeyBase64
-                };
-                const jsonStr = btoa(JSON.stringify(signalData));
+            const pubKeyBase64 = await exportPublicKey();
+            const signalData = {
+                sdp: peerConnection.localDescription,
+                pubKey: pubKeyBase64
+            };
+            
+            const compressedToken = await compressData(JSON.stringify(signalData));
 
-                if (peerConnection.localDescription.type === 'offer') {
-                    document.getElementById('host-offer-out').value = jsonStr;
-                } else if (peerConnection.localDescription.type === 'answer') {
-                    document.getElementById('join-answer-out').value = jsonStr;
-                }
-            });
+            if (peerConnection.localDescription.type === 'offer') {
+                document.getElementById('host-offer-out').value = compressedToken;
+            } else if (peerConnection.localDescription.type === 'answer') {
+                document.getElementById('join-answer-out').value = compressedToken;
+            }
         }
 
-        async function switchSignalingTab(tab) {
+        async function startHostGeneration() {
+            document.getElementById('btn-generate-offer').classList.add('hidden');
+            document.getElementById('host-offer-container').classList.remove('hidden');
+
+            if (!peerConnection.localDescription) {
+                dataChannel = peerConnection.createDataChannel("privatalk-channel");
+                setupDataChannel();
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+            }
+        }
+
+        async function switchTab(tab) {
             const hostBtn = document.getElementById('tab-host-btn');
             const joinBtn = document.getElementById('tab-join-btn');
             const hostContent = document.getElementById('tab-host-content');
             const joinContent = document.getElementById('tab-join-content');
 
             if (tab === 'host') {
-                hostBtn.className = "flex-1 py-2 rounded-lg font-bold bg-cyber-accent text-slate-950 transition flex items-center justify-center gap-2";
-                joinBtn.className = "flex-1 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2";
+                hostBtn.className = "py-2.5 rounded-xl font-semibold bg-brand-500 text-white transition flex items-center justify-center gap-1.5";
+                joinBtn.className = "py-2.5 rounded-xl font-semibold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
                 hostContent.classList.remove('hidden');
                 joinContent.classList.add('hidden');
-
-                // Create Offer as Host
-                if (!peerConnection.localDescription) {
-                    dataChannel = peerConnection.createDataChannel("ghostchat-channel");
-                    setupDataChannel();
-
-                    const offer = await peerConnection.createOffer();
-                    await peerConnection.setLocalDescription(offer);
-                }
             } else {
-                joinBtn.className = "flex-1 py-2 rounded-lg font-bold bg-cyber-purple text-white transition flex items-center justify-center gap-2";
-                hostBtn.className = "flex-1 py-2 rounded-lg font-bold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-2";
+                joinBtn.className = "py-2.5 rounded-xl font-semibold bg-brand-500 text-white transition flex items-center justify-center gap-1.5";
+                hostBtn.className = "py-2.5 rounded-xl font-semibold text-slate-400 hover:text-slate-200 transition flex items-center justify-center gap-1.5";
                 joinContent.classList.remove('hidden');
                 hostContent.classList.add('hidden');
             }
@@ -613,33 +550,35 @@
 
         async function acceptAnswerAsHost() {
             const rawVal = document.getElementById('host-answer-in').value.trim();
-            if (!rawVal) return showToast('Veuillez coller le token de réponse');
+            if (!rawVal) return showToast('Veuillez coller le code de réponse');
 
             try {
-                const signalData = JSON.parse(atob(rawVal));
+                const decompressedStr = await decompressData(rawVal);
+                const signalData = JSON.parse(decompressedStr);
                 await importPeerPublicKey(signalData.pubKey);
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
-                showToast('Token de réponse accepté ! Établissement de la connexion...');
+                showToast('Connexion en cours...');
             } catch (err) {
-                showToast('Erreur : Token invalide ou corrompu');
+                showToast('Code invalide ou incorrect');
             }
         }
 
         async function generateAnswerAsGuest() {
             const rawVal = document.getElementById('join-offer-in').value.trim();
-            if (!rawVal) return showToast('Veuillez coller le token d\'offre');
+            if (!rawVal) return showToast('Veuillez coller la clé d\'invitation');
 
             try {
-                const signalData = JSON.parse(atob(rawVal));
+                const decompressedStr = await decompressData(rawVal);
+                const signalData = JSON.parse(decompressedStr);
                 await importPeerPublicKey(signalData.pubKey);
                 await peerConnection.setRemoteDescription(new RTCSessionDescription(signalData.sdp));
 
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
 
-                showToast('Réponse générée ! Renvoyez le token à l\'hôte.');
+                showToast('Code généré ! Transmettez-le à l\'hôte.');
             } catch (err) {
-                showToast('Erreur : Token d\'offre invalide');
+                showToast('Clé d\'invitation invalide');
             }
         }
 
@@ -648,58 +587,89 @@
                 document.getElementById('setup-overlay').classList.add('hidden');
                 updateStatusUI(true);
                 playSound('connect');
-                showToast('CANAL P2P ÉTABLI AVEC SUCCÈS !');
+                showToast('Connecté en direct !');
             };
 
             dataChannel.onclose = () => {
-                updateStatusUI(false);
-                showToast('Connexion P2P fermée');
+                emergencyWipe(false);
             };
 
             dataChannel.onmessage = async (event) => {
                 const packet = JSON.parse(event.data);
-
                 if (packet.type === 'typing') {
                     showTypingIndicator();
                 } else if (packet.type === 'chat') {
                     hideTypingIndicator();
-                    const decryptedText = await decryptPayload(packet.payload);
-                    renderIncomingMessage(decryptedText, packet.ttl);
+                    const decryptedData = await decryptPayload(packet.payload);
+                    renderIncomingMessage(decryptedData, false, packet.ttl);
                     playSound('receive');
+                } else if (packet.type === 'img-chunk') {
+                    handleIncomingImgChunk(packet);
+                } else if (packet.type === 'wipe') {
+                    emergencyWipe(false);
                 }
             };
         }
 
         function updateStatusUI(connected) {
-            const dot = document.getElementById('connection-status-dot');
-            const text = document.getElementById('connection-status-text');
+            const dot = document.getElementById('status-dot');
+            const text = document.getElementById('status-text');
             const input = document.getElementById('chat-input');
             const sendBtn = document.getElementById('send-btn');
+            const imageBtn = document.getElementById('image-btn');
 
             if (connected) {
-                dot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
-                text.className = "text-emerald-400 font-bold";
-                text.innerText = "Connecté (P2P E2EE Direct)";
+                dot.className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                text.className = "text-xs text-emerald-400 font-medium";
+                text.innerText = "En ligne (Discussion directe sécurisée)";
                 
                 input.disabled = false;
-                input.placeholder = "Saisissez un message ultra-sécurisé...";
+                imageBtn.disabled = false;
+                input.placeholder = "Écrivez votre message privé...";
                 sendBtn.disabled = false;
-                sendBtn.className = "bg-cyber-accent hover:bg-teal-300 text-slate-950 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-mono glow-accent cursor-pointer";
+                sendBtn.className = "bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-3 rounded-2xl transition flex items-center gap-2 text-xs sm:text-sm shadow-lg shadow-brand-500/20 cursor-pointer shrink-0";
             } else {
-                dot.className = "w-2 h-2 rounded-full bg-rose-500";
-                text.className = "text-rose-400";
-                text.innerText = "Non connecté";
+                dot.className = "w-2 h-2 rounded-full bg-amber-500";
+                text.className = "text-xs text-slate-400";
+                text.innerText = "En attente de connexion";
 
                 input.disabled = true;
-                input.placeholder = "Veuillez d'abord établir la connexion P2P...";
+                imageBtn.disabled = true;
+                input.placeholder = "Connectez-vous pour envoyer un message...";
                 sendBtn.disabled = true;
-                sendBtn.className = "bg-cyber-accent/30 text-slate-500 font-bold px-4 py-2.5 rounded-xl transition flex items-center gap-1.5 text-xs font-mono cursor-not-allowed";
+                sendBtn.className = "bg-slate-800 text-slate-500 font-semibold px-5 py-3 rounded-2xl transition flex items-center gap-2 text-xs sm:text-sm cursor-not-allowed shrink-0";
             }
         }
 
-        // =========================================================================
-        // CHAT MESSAGING & TYPING LOGIC
-        // =========================================================================
+        function handleImageSelected(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                stagedImageBase64 = e.target.result;
+                document.getElementById('image-preview-thumb').src = stagedImageBase64;
+                document.getElementById('image-preview-container').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+            event.target.value = '';
+        }
+
+        function cancelSelectedImage() {
+            stagedImageBase64 = null;
+            document.getElementById('image-preview-container').classList.add('hidden');
+        }
+
+        async function sendMessageOrImage() {
+            if (stagedImageBase64) {
+                const imgData = stagedImageBase64;
+                cancelSelectedImage();
+                await sendImageWithChunks(imgData);
+            } else {
+                await sendChatMessage();
+            }
+        }
+
         async function sendChatMessage() {
             const input = document.getElementById('chat-input');
             const text = input.value.trim();
@@ -708,28 +678,128 @@
             if (!text || !dataChannel || dataChannel.readyState !== 'open') return;
 
             input.value = '';
-
-            // Encrypt using Web Crypto
             const encryptedPayload = await encryptPayload(text);
 
-            // Send packet over WebRTC
             dataChannel.send(JSON.stringify({
                 type: 'chat',
                 payload: encryptedPayload,
                 ttl: ttl
             }));
 
-            // Render on local screen
-            renderOutgoingMessage(text, ttl);
+            renderOutgoingMessage(text, false, ttl);
             playSound('send');
+        }
+
+        async function sendImageWithChunks(base64Image) {
+            const ttl = parseInt(document.getElementById('ttl-select').value, 10);
+            const container = document.getElementById('messages-container');
+            const msgId = 'img-' + Date.now();
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            const msgEl = document.createElement('div');
+            msgEl.id = msgId;
+            msgEl.className = "flex flex-col items-end space-y-1";
+            msgEl.innerHTML = `
+                <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 bg-brand-500 text-white rounded-br-none space-y-2 shadow-md">
+                    <div class="flex items-center justify-between gap-4 text-[10px] text-brand-100 font-medium">
+                        <span>Vous</span>
+                        <span>${timeStr}</span>
+                    </div>
+                    <img src="${base64Image}" class="max-w-xs sm:max-w-sm rounded-xl object-cover border border-brand-400/30" alt="Photo en cours d'envoi">
+                    <div class="space-y-1 pt-1 border-t border-brand-400/40" id="progress-block-${msgId}">
+                        <div class="flex justify-between text-[10px] font-semibold text-brand-100">
+                            <span>Transfert P2P...</span>
+                            <span id="progress-pct-${msgId}">0%</span>
+                        </div>
+                        <div class="w-full bg-brand-700/60 h-1.5 rounded-full overflow-hidden">
+                            <div id="progress-bar-${msgId}" class="bg-white h-full w-0 transition-all duration-75"></div>
+                        </div>
+                    </div>
+                    ${ttl > 0 ? `<div class="text-[10px] text-amber-200 flex items-center gap-1 font-medium pt-1"><i data-lucide="flame" class="w-3 h-3"></i> Effacement dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
+                </div>
+            `;
+            container.appendChild(msgEl);
+            container.scrollTop = container.scrollHeight;
+            lucide.createIcons();
+
+            const encryptedPayload = await encryptPayload(base64Image);
+            const serializedPayload = JSON.stringify(encryptedPayload);
+
+            const totalChunks = Math.ceil(serializedPayload.length / CHUNK_SIZE);
+            const transferId = 'tr-' + Date.now();
+
+            for (let i = 0; i < totalChunks; i++) {
+                const chunkData = serializedPayload.slice(i * CHUNK_SIZE, (i + 1) * CHUNK_SIZE);
+                
+                const packet = {
+                    type: 'img-chunk',
+                    transferId: transferId,
+                    chunkIndex: i,
+                    totalChunks: totalChunks,
+                    data: chunkData,
+                    ttl: ttl
+                };
+
+                while (dataChannel.bufferedAmount > 65536) {
+                    await new Promise(r => setTimeout(r, 20));
+                }
+
+                dataChannel.send(JSON.stringify(packet));
+
+                const pct = Math.round(((i + 1) / totalChunks) * 100);
+                const bar = document.getElementById(`progress-bar-${msgId}`);
+                const pctLabel = document.getElementById(`progress-pct-${msgId}`);
+                if (bar && pctLabel) {
+                    bar.style.width = pct + '%';
+                    pctLabel.innerText = pct + '%';
+                }
+            }
+
+            setTimeout(() => {
+                const progressBlock = document.getElementById(`progress-block-${msgId}`);
+                if (progressBlock) progressBlock.remove();
+            }, 800);
+
+            playSound('send');
+            if (ttl > 0) setupSelfDestruct(msgId, ttl);
+        }
+
+        async function handleIncomingImgChunk(packet) {
+            const { transferId, chunkIndex, totalChunks, data, ttl } = packet;
+
+            if (!incomingChunks[transferId]) {
+                incomingChunks[transferId] = {
+                    receivedCount: 0,
+                    totalChunks: totalChunks,
+                    chunks: new Array(totalChunks),
+                    ttl: ttl
+                };
+            }
+
+            const transfer = incomingChunks[transferId];
+            if (!transfer.chunks[chunkIndex]) {
+                transfer.chunks[chunkIndex] = data;
+                transfer.receivedCount++;
+            }
+
+            if (transfer.receivedCount === totalChunks) {
+                const fullSerializedPayload = transfer.chunks.join('');
+                delete incomingChunks[transferId];
+
+                try {
+                    const encryptedPayload = JSON.parse(fullSerializedPayload);
+                    const decryptedImageBase64 = await decryptPayload(encryptedPayload);
+                    renderIncomingMessage(decryptedImageBase64, true, ttl);
+                    playSound('receive');
+                } catch(e) {
+                    showToast("Erreur lors du déchiffrement de l'image");
+                }
+            }
         }
 
         function handleTyping() {
             if (!dataChannel || dataChannel.readyState !== 'open') return;
-            
-            if (!typingTimeout) {
-                dataChannel.send(JSON.stringify({ type: 'typing' }));
-            }
+            if (!typingTimeout) dataChannel.send(JSON.stringify({ type: 'typing' }));
             clearTimeout(typingTimeout);
             typingTimeout = setTimeout(() => { typingTimeout = null; }, 2000);
         }
@@ -744,24 +814,25 @@
             document.getElementById('typing-indicator').classList.add('hidden');
         }
 
-        function renderOutgoingMessage(text, ttl) {
+        function renderOutgoingMessage(content, isImage, ttl) {
             const container = document.getElementById('messages-container');
             const msgId = 'msg-' + Date.now();
-            
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
             const msgEl = document.createElement('div');
             msgEl.id = msgId;
             msgEl.className = "flex flex-col items-end space-y-1";
 
-            const timeStr = new Date().toLocaleTimeString().substring(0, 5);
+            const bodyContent = `<div class="text-xs sm:text-sm leading-relaxed break-words">${escapeHtml(content)}</div>`;
 
             msgEl.innerHTML = `
-                <div class="max-w-[80%] rounded-2xl p-3 bg-cyber-accent/10 border border-cyber-accent/30 text-slate-100 rounded-br-none space-y-1">
-                    <div class="flex items-center justify-between gap-4 text-[10px] font-mono text-cyber-accent font-bold">
-                        <span>VOUS</span>
-                        <span class="text-slate-500 font-normal">${timeStr}</span>
+                <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 bg-brand-500 text-white rounded-br-none space-y-1 shadow-md">
+                    <div class="flex items-center justify-between gap-4 text-[10px] text-brand-100 font-medium">
+                        <span>Vous</span>
+                        <span>${timeStr}</span>
                     </div>
-                    <div class="text-xs break-words">${escapeHtml(text)}</div>
-                    ${ttl > 0 ? `<div class="text-[10px] font-mono text-amber-400 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> Autodestruction dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
+                    ${bodyContent}
+                    ${ttl > 0 ? `<div class="text-[10px] text-amber-200 flex items-center gap-1 font-medium pt-1 border-t border-brand-400/40"><i data-lucide="flame" class="w-3 h-3"></i> Effacement dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
                 </div>
             `;
 
@@ -772,24 +843,27 @@
             if (ttl > 0) setupSelfDestruct(msgId, ttl);
         }
 
-        function renderIncomingMessage(text, ttl) {
+        function renderIncomingMessage(content, isImage, ttl) {
             const container = document.getElementById('messages-container');
             const msgId = 'msg-' + Date.now();
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             const msgEl = document.createElement('div');
             msgEl.id = msgId;
             msgEl.className = "flex flex-col items-start space-y-1";
 
-            const timeStr = new Date().toLocaleTimeString().substring(0, 5);
+            const bodyContent = isImage 
+                ? `<img src="${content}" class="max-w-xs sm:max-w-sm rounded-xl object-cover border border-slate-700 my-1" alt="Photo reçue">` 
+                : `<div class="text-xs sm:text-sm leading-relaxed break-words">${escapeHtml(content)}</div>`;
 
             msgEl.innerHTML = `
-                <div class="max-w-[80%] rounded-2xl p-3 bg-cyber-card border border-cyber-border text-slate-100 rounded-bl-none space-y-1">
-                    <div class="flex items-center justify-between gap-4 text-[10px] font-mono text-cyber-purple font-bold">
-                        <span>PEER (DISTANT)</span>
-                        <span class="text-slate-500 font-normal">${timeStr}</span>
+                <div class="max-w-[85%] sm:max-w-[70%] rounded-2xl p-3.5 bg-slate-900 border border-slate-800 text-slate-100 rounded-bl-none space-y-1 shadow-md">
+                    <div class="flex items-center justify-between gap-4 text-[10px] text-slate-400 font-medium">
+                        <span>Correspondant</span>
+                        <span>${timeStr}</span>
                     </div>
-                    <div class="text-xs break-words">${escapeHtml(text)}</div>
-                    ${ttl > 0 ? `<div class="text-[10px] font-mono text-amber-400 flex items-center gap-1"><i data-lucide="flame" class="w-3 h-3"></i> Autodestruction dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
+                    ${bodyContent}
+                    ${ttl > 0 ? `<div class="text-[10px] text-amber-400 flex items-center gap-1 font-medium pt-1 border-t border-slate-800"><i data-lucide="flame" class="w-3 h-3"></i> Effacement dans <span id="ttl-${msgId}">${ttl}</span>s</div>` : ''}
                 </div>
             `;
 
@@ -811,66 +885,72 @@
                     clearInterval(timerInterval);
                     const msgEl = document.getElementById(msgId);
                     if (msgEl) {
-                        msgEl.classList.add('animate-disintegrate');
-                        setTimeout(() => msgEl.remove(), 600);
+                        msgEl.classList.add('animate-destroy');
+                        setTimeout(() => msgEl.remove(), 500);
                     }
                 }
             }, 1000);
         }
 
-        // =========================================================================
-        // EMERGENCY KILL SWITCH & UTILITIES
-        // =========================================================================
-        function emergencyWipe() {
+        function emergencyWipe(sendSignal = true) {
             playSound('wipe');
 
-            // 1. Close WebRTC Connections
-            if (dataChannel) dataChannel.close();
+            if (sendSignal && dataChannel && dataChannel.readyState === 'open') {
+                try {
+                    dataChannel.send(JSON.stringify({ type: 'wipe' }));
+                } catch(e) {}
+            }
+
+            if (dataChannel) {
+                dataChannel.onclose = null;
+                dataChannel.close();
+            }
             if (peerConnection) peerConnection.close();
 
-            // 2. Clear RAM memory
             myKeyPair = null;
             peerPublicKey = null;
+            stagedImageBase64 = null;
+            incomingChunks = {};
+            document.getElementById('image-preview-container').classList.add('hidden');
 
-            // 3. Clear Chat UI
             const container = document.getElementById('messages-container');
             container.innerHTML = `
-                <div class="max-w-md mx-auto my-6 p-4 rounded-xl bg-cyber-danger/10 border border-cyber-danger/30 text-center space-y-2">
-                    <div class="inline-flex p-2 rounded-full bg-cyber-danger/20 text-cyber-danger">
-                        <i data-lucide="skull" class="w-6 h-6"></i>
+                <div class="max-w-md mx-auto my-8 p-5 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-center space-y-2">
+                    <div class="inline-flex p-3 rounded-2xl bg-rose-500/20 text-rose-400 mb-1">
+                        <i data-lucide="shield-alert" class="w-6 h-6"></i>
                     </div>
-                    <h3 class="font-bold text-cyber-danger text-sm font-mono">PURGE D'URGENCE EXÉCUTÉE</h3>
-                    <p class="text-[11px] text-slate-400 font-mono">Toutes les clés RSA/AES en mémoire RAM ont été détruites. Le salon P2P a été fermé.</p>
+                    <h3 class="font-bold text-rose-400 text-sm">Session complètement effacée</h3>
+                    <p class="text-xs text-slate-400">Toutes les clés de chiffrement, messages et photos ont été détruits des deux côtés.</p>
                 </div>
             `;
 
-            // 4. Reset Inputs & Show Setup Overlay
             document.getElementById('host-offer-out').value = '';
             document.getElementById('host-answer-in').value = '';
             document.getElementById('join-offer-in').value = '';
             document.getElementById('join-answer-out').value = '';
+            document.getElementById('btn-generate-offer').classList.remove('hidden');
+            document.getElementById('host-offer-container').classList.add('hidden');
 
             updateStatusUI(false);
             document.getElementById('setup-overlay').classList.remove('hidden');
 
-            showToast('PURGE TOTALE EXÉCUTÉE (RAM nettoyée)');
+            showToast('Session fermée et mémoire nettoyée');
             lucide.createIcons();
 
-            // Re-init WebRTC for next session
             initWebRTC();
             generateUserKeys();
         }
 
         function showQRCode(elementId) {
             const val = document.getElementById(elementId).value;
-            if (!val) return showToast('Aucun token disponible à afficher en QR Code');
+            if (!val) return showToast('Aucun code à afficher');
 
-            const qr = new QRious({
+            new QRious({
                 element: document.getElementById('qr-canvas'),
                 value: val,
-                size: 240,
+                size: 220,
                 backgroundAlpha: 0,
-                foreground: '#090d16'
+                foreground: '#020617'
             });
 
             document.getElementById('qr-modal').classList.remove('hidden');
@@ -885,13 +965,12 @@
             if (!text) return;
 
             navigator.clipboard.writeText(text).then(() => {
-                showToast('Token copié dans le presse-papier !');
+                showToast('Code copié dans le presse-papier !');
             }).catch(() => {
-                // Fallback execCommand
                 const el = document.getElementById(elementId);
                 el.select();
                 document.execCommand('copy');
-                showToast('Token copié dans le presse-papier !');
+                showToast('Code copié dans le presse-papier !');
             });
         }
 
@@ -899,7 +978,7 @@
             const toast = document.getElementById('toast');
             document.getElementById('toast-text').innerText = msg;
             toast.classList.remove('opacity-0');
-            setTimeout(() => { toast.classList.add('opacity-0'); }, 3000);
+            setTimeout(() => { toast.classList.add('opacity-0'); }, 2500);
         }
 
         function arrayBufferToBase64(buffer) {

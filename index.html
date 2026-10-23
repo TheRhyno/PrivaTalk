@@ -284,7 +284,7 @@
         <span id="toast-text">Notification</span>
     </div>
 
-    <!-- LOGIQUE JAVASCRIPT COMPLÈTE CORRIGÉE -->
+    <!-- LOGIQUE JAVASCRIPT COMPLÈTE AVEC MISE À JOUR AUTOMATIQUE PWA -->
     <script>
         let peerConnection = null;
         let dataChannel = null;
@@ -294,6 +294,7 @@
         let typingTimeout = null;
         let deferredPwaPrompt = null;
         let stagedImageBase64 = null;
+        let swRegistration = null;
 
         let incomingChunks = {};
         const CHUNK_SIZE = 16384;
@@ -353,13 +354,63 @@
             document.head.appendChild(link);
 
             if ('serviceWorker' in navigator) {
+                // Service worker avec stratégie Network-First pour forcer le chargement de la toute dernière version HTML disponible
                 const swCode = `
-                    self.addEventListener('install', e => self.skipWaiting());
-                    self.addEventListener('activate', e => e.waitUntil(clients.claim()));
-                    self.addEventListener('fetch', e => e.respondWith(fetch(e.request).catch(() => caches.match(e.request))));
+                    const CACHE_NAME = 'privatalk-v' + Date.now();
+                    
+                    self.addEventListener('install', e => {
+                        self.skipWaiting();
+                    });
+
+                    self.addEventListener('activate', e => {
+                        e.waitUntil(
+                            caches.keys().then(keys => Promise.all(
+                                keys.map(k => caches.delete(k))
+                            )).then(() => self.clients.claim())
+                        );
+                    });
+
+                    self.addEventListener('fetch', e => {
+                        if (e.request.mode === 'navigate') {
+                            e.respondWith(
+                                fetch(e.request)
+                                    .then(res => {
+                                        const copy = res.clone();
+                                        caches.open(CACHE_NAME).then(c => c.put(e.request, copy));
+                                        return res;
+                                    })
+                                    .catch(() => caches.match(e.request))
+                            );
+                        } else {
+                            e.respondWith(
+                                fetch(e.request).catch(() => caches.match(e.request))
+                            );
+                        }
+                    });
                 `;
                 const blobSW = new Blob([swCode], { type: 'text/javascript' });
-                navigator.serviceWorker.register(URL.createObjectURL(blobSW)).catch(() => {});
+                const swUrl = URL.createObjectURL(blobSW);
+
+                let refreshing = false;
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    if (!refreshing) {
+                        refreshing = true;
+                        window.location.reload();
+                    }
+                });
+
+                navigator.serviceWorker.register(swUrl).then(reg => {
+                    swRegistration = reg;
+                    // Vérifier si une nouvelle version est disponible immédiatement au lancement
+                    reg.update();
+                }).catch(() => {});
+
+                // Vérifier la mise à jour à chaque fois que la PWA repasse au premier plan
+                document.addEventListener('visibilitychange', () => {
+                    if (document.visibilityState === 'visible' && swRegistration) {
+                        swRegistration.update();
+                    }
+                });
             }
 
             window.addEventListener('beforeinstallprompt', (e) => {
@@ -604,7 +655,6 @@
             };
 
             dataChannel.onclose = () => {
-                // Si le canal se ferme (ex: l'autre quitte l'application ou ferme l'onglet)
                 emergencyWipe(false);
             };
 
@@ -1007,7 +1057,7 @@
         function base64ToArrayBuffer(base64) {
             const binaryString = window.atob(base64);
             const bytes = new Uint8Array(binaryString.length);
-            for (let i = 0; i < binaryString.length; i++) {
+            for (let i = 0; i < bytes.byteLength; i++) {
                 bytes[i] = binaryString.charCodeAt(i);
             }
             return bytes.buffer;

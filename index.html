@@ -246,16 +246,16 @@
                 </div>
 
                 <input type="file" id="image-input" accept="image/*" class="hidden" onchange="handleImageSelected(event)">
-                <button id="image-btn" disabled onclick="document.getElementById('image-input').click()" class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed" title="Sélectionner une photo">
+                <button id="image-btn" disabled onclick="document.getElementById('image-input').click()" class="p-3 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-2xl transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0" title="Sélectionner une photo">
                     <i data-lucide="image" class="w-4 h-4 text-brand-500"></i>
                 </button>
 
                 <input type="text" id="chat-input" disabled placeholder="Connectez-vous pour envoyer un message..." 
-                    class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition"
+                    class="flex-1 bg-slate-800 border border-slate-700 rounded-2xl px-4 py-3 text-xs sm:text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 transition min-w-0"
                     onkeydown="handleTyping(); if(event.key==='Enter') sendMessageOrImage();">
 
-                <button id="send-btn" disabled onclick="sendMessageOrImage()" class="bg-slate-800 text-slate-500 font-semibold px-5 py-3 rounded-2xl transition flex items-center gap-2 text-xs sm:text-sm cursor-not-allowed shrink-0">
-                    <span>Envoyer</span>
+                <!-- Bouton Envoyer compact et responsive (carré avec icône) -->
+                <button id="send-btn" disabled onclick="sendMessageOrImage()" class="bg-slate-800 text-slate-500 p-3 rounded-2xl transition flex items-center justify-center text-xs sm:text-sm cursor-not-allowed shrink-0" title="Envoyer">
                     <i data-lucide="send" class="w-4 h-4"></i>
                 </button>
             </div>
@@ -304,6 +304,19 @@
             initWebAudio();
             await generateUserKeys();
             initWebRTC();
+        });
+
+        // Détection de fermeture brutale de l'onglet / de la page pour nettoyer et prévenir l'autre
+        window.addEventListener('beforeunload', () => {
+            if (dataChannel && dataChannel.readyState === 'open') {
+                try {
+                    dataChannel.send(JSON.stringify({ type: 'wipe' }));
+                } catch(e) {}
+            }
+        });
+
+        window.addEventListener('pagehide', () => {
+            emergencyWipe(false);
         });
 
         async function compressData(str) {
@@ -591,6 +604,7 @@
             };
 
             dataChannel.onclose = () => {
+                // Si le canal se ferme (ex: l'autre quitte l'application ou ferme l'onglet)
                 emergencyWipe(false);
             };
 
@@ -627,7 +641,7 @@
                 imageBtn.disabled = false;
                 input.placeholder = "Écrivez votre message privé...";
                 sendBtn.disabled = false;
-                sendBtn.className = "bg-brand-500 hover:bg-brand-600 text-white font-semibold px-5 py-3 rounded-2xl transition flex items-center gap-2 text-xs sm:text-sm shadow-lg shadow-brand-500/20 cursor-pointer shrink-0";
+                sendBtn.className = "bg-brand-500 hover:bg-brand-600 text-white p-3 rounded-2xl transition flex items-center justify-center text-xs sm:text-sm shadow-lg shadow-brand-500/20 cursor-pointer shrink-0";
             } else {
                 dot.className = "w-2 h-2 rounded-full bg-amber-500";
                 text.className = "text-xs text-slate-400";
@@ -637,7 +651,7 @@
                 imageBtn.disabled = true;
                 input.placeholder = "Connectez-vous pour envoyer un message...";
                 sendBtn.disabled = true;
-                sendBtn.className = "bg-slate-800 text-slate-500 font-semibold px-5 py-3 rounded-2xl transition flex items-center gap-2 text-xs sm:text-sm cursor-not-allowed shrink-0";
+                sendBtn.className = "bg-slate-800 text-slate-500 p-3 rounded-2xl transition flex items-center justify-center text-xs sm:text-sm cursor-not-allowed shrink-0";
             }
         }
 
